@@ -1,0 +1,520 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-incoming",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -416,
+        -464
+      ],
+      "id": "44b0b81a-a03c-4805-8518-3ddbec204551",
+      "name": "Webhook",
+      "webhookId": "696fbf41-2710-475e-882e-152c183aad63"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8ca0818d-ade7-40e3-948d-f444100363cd",
+              "leftValue": "={{ $json.body.payload.from }}",
+              "rightValue": "120363428000042923@g.us",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -240,
+        -464
+      ],
+      "id": "f1d08100-b317-4ed5-b838-eb5bf5b20d91",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/api/sendText",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "wahakey123"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chatId",
+              "value": "120363428000042923@g.us"
+            },
+            {
+              "name": "text",
+              "value": "={{ $('Basic LLM Chain').first().json.text }}"
+            },
+            {
+              "name": "session",
+              "value": "default"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1168,
+        -336
+      ],
+      "id": "8deef619-d5db-420c-ab2f-397b1bb3b4cf",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const apiKey = 'AIzaSyBT1D-j3TEFqU57Jr8YPPItH3aSqhX9-og';\nconst sheetId = '1PyfqMzP95txyVW3oMlvmG6M4jYtho6J7C083NKrUPSg';\nconst sheets = ['Ticketing', 'Finance', 'Properties', 'IT'];\n\nconst results = {};\n\nfor (const sheetName of sheets) {\n  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}?key=${apiKey}`;\n  \n  const response = await this.helpers.httpRequest({\n    method: 'GET',\n    url: url,\n  });\n  \n  const rows = response.values;\n  const headers = rows[0];\n  const parsed = rows.slice(1).map(row => {\n    const obj = {};\n    headers.forEach((header, i) => {\n      obj[header] = row[i] || '';\n    });\n    return obj;\n  });\n  \n  results[sheetName] = parsed;\n}\n\nreturn [{ json: results }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -16,
+        -480
+      ],
+      "id": "2a71b59e-90d0-47ca-8d0e-eb1349d7ff4d",
+      "name": "Code in JavaScript",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a data assistant for Fayz e Husayni. Answer ONLY from the data below.\n\nTICKETING: {{ JSON.stringify($('Code in JavaScript').first().json.Ticketing) }}\nFINANCE: {{ JSON.stringify($('Code in JavaScript').first().json.Finance) }}\nPROPERTIES: {{ JSON.stringify($('Code in JavaScript').first().json.Properties) }}\nIT: {{ JSON.stringify($('Code in JavaScript').first().json.IT) }}\n\nQuestion: {{ $('Webhook').first().json.body.payload.body }}\n\nFORMAT RULES - FOLLOW EXACTLY:\n- Max 4 lines total\n- For lists use this exact format:\nLine 1: [Title]:\nLine 2: • [Item 1]\nLine 3: • [Item 2]\nLine 4: • [Item 3]\n- NO commas between list items\n- NO asterisks\n- Numbers only, no calculation steps\n- Unknown data = \"Not available\"\n- NEVER provide information that was not explicitly asked for\n- If someone greets you, just confirm you are working with one line only\n- Do not volunteer extra data unless specifically requested\n\nEXAMPLE of correct format:\nProperties with issues:\n- Office Block (2 issues)\n- Guest Rooms (5 issues)\n- Library (3 issues) ",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        640,
+        -464
+      ],
+      "id": "90a1a111-9f7e-4a1f-8d0d-cad3b2b6a7f3",
+      "name": "Basic LLM Chain",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.1-8b-instant",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        640,
+        -256
+      ],
+      "id": "b466c08e-4bcb-4ccb-a129-10ea331ba5b3",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "zl9DJLiZJQOMKG0W",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d3df42ef-2048-477e-b1b7-9e2802baed11",
+              "leftValue": "={{ $('Webhook').first().json.body.payload.body.toLowerCase() }}",
+              "rightValue": "report",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        336,
+        -416
+      ],
+      "id": "8920779f-4307-42bc-8ab4-dd8726e47fef",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Code in JavaScript').first().json;\nconst message = $('Webhook').first().json.body.payload.body.toLowerCase();\n\nlet reportData = [];\nlet reportName = '';\nlet headers = [];\n\nif (message.includes('finance')) {\n  reportData = data.Finance;\n  reportName = '📊 Finance Report';\n  headers = ['Transaction ID', 'Department', 'Type', 'Description', 'Amount PKR', 'Status'];\n} else if (message.includes('ticket')) {\n  reportData = data.Ticketing;\n  reportName = '🎫 Ticketing Report';\n  headers = ['Ticket ID', 'Name', 'Batch', 'Status', 'Amount PKR'];\n} else if (message.includes('propert')) {\n  reportData = data.Properties;\n  reportName = '🏢 Properties Report';\n  headers = ['Name', 'Block', 'Status', 'Issues', 'Responsible'];\n} else if (message.includes('it') || message.includes('system')) {\n  reportData = data.IT;\n  reportName = '💻 IT Systems Report';\n  headers = ['System Name', 'Type', 'Status', 'Responsible', 'Users'];\n} else {\n  reportData = data.Finance;\n  reportName = '📊 Finance Report';\n  headers = ['Transaction ID', 'Department', 'Type', 'Description', 'Amount PKR', 'Status'];\n}\n\n// Build formatted text report\nlet report = `*${reportName}*\\n`;\nreport += `_Generated: ${new Date().toLocaleDateString()}_\\n`;\nreport += `─────────────────\\n`;\n\nreportData.forEach((row, i) => {\n  report += `\\n*${i + 1}.* `;\n  headers.forEach(h => {\n    report += `${h}: ${row[h] || 'N/A'}  `;\n  });\n  report += '\\n';\n});\n\nreport += `─────────────────\\n`;\nreport += `_Total records: ${reportData.length}_`;\n\nreturn [{ json: { reportText: report } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        -640
+      ],
+      "id": "77052d8d-6686-4450-acee-c72184f6613a",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/api/sendText",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "wahakey123"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chatId",
+              "value": "120363428000042923@g.us"
+            },
+            {
+              "name": "session",
+              "value": "default"
+            },
+            {
+              "name": "text",
+              "value": "={{ $('Code in JavaScript1').first().json.reportText }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        720,
+        -640
+      ],
+      "id": "e3e00778-8b80-40aa-868a-99c91d0135e9",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "cb670d4f-0f51-4c2f-b9ea-0177efbebdf2",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        912,
+        -464
+      ],
+      "id": "1d608683-b72b-43b2-b731-7aec79defdbb",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/api/sendText",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "wahakey123"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chatId",
+              "value": "120363428000042923@g.us"
+            },
+            {
+              "name": "session",
+              "value": "default"
+            },
+            {
+              "name": "text",
+              "value": "⚠️ Sorry, I'm unable to process your request right now. Please try again in a moment."
+            },
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1168,
+        -560
+      ],
+      "id": "c0801e01-8d53-4631-a6f5-f9c724406976",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0b4c3ff1-bb5e-4d22-8cda-e36955592ad3",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        128,
+        -480
+      ],
+      "id": "cd509677-3871-4873-ada0-140bac42e174",
+      "name": "If3"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/api/sendText",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "wahakey123"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chatId",
+              "value": "120363428000042923@g.us"
+            },
+            {
+              "name": "session",
+              "value": "default"
+            },
+            {
+              "name": "text",
+              "value": "⚠️ Sorry, I'm unable to process your request right now. Please try again in a moment."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        304,
+        -656
+      ],
+      "id": "bebd07d3-09f6-4437-91ff-a373ea0f3633",
+      "name": "HTTP Request3"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If3": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "bdefb94b-b34f-44dc-97fd-179f0c2b63a6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "07326340cf2290855264b05c14d5ca83048a46f0977ece2fdc017918751e096a"
+  },
+  "nodeGroups": [],
+  "id": "YSBGPyDtIEBmbPF1",
+  "tags": []
+}
