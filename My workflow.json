@@ -94,7 +94,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const apiKey = 'AIzaSyBT1D-j3TEFqU57Jr8YPPItH3aSqhX9-og';\nconst sheetId = '1PyfqMzP95txyVW3oMlvmG6M4jYtho6J7C083NKrUPSg';\nconst sheets = ['Ticketing', 'Finance', 'Properties', 'IT'];\n\nconst results = {};\n\nfor (const sheetName of sheets) {\n  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}?key=${apiKey}`;\n  \n  const response = await this.helpers.httpRequest({\n    method: 'GET',\n    url: url,\n  });\n  \n  const rows = response.values;\n  const headers = rows[0];\n  const parsed = rows.slice(1).map(row => {\n    const obj = {};\n    headers.forEach((header, i) => {\n      obj[header] = row[i] || '';\n    });\n    return obj;\n  });\n  \n  results[sheetName] = parsed;\n}\n\nreturn [{ json: results }];"
+        "jsCode": "const apiKey = 'AI_Api_Key';\nconst sheetId = 'Google_Sheets_API_Key';\nconst sheets = ['Ticketing', 'Finance', 'Properties', 'IT'];\n\nconst results = {};\n\nfor (const sheetName of sheets) {\n  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}?key=${apiKey}`;\n  \n  const response = await this.helpers.httpRequest({\n    method: 'GET',\n    url: url,\n  });\n  \n  const rows = response.values;\n  const headers = rows[0];\n  const parsed = rows.slice(1).map(row => {\n    const obj = {};\n    headers.forEach((header, i) => {\n      obj[header] = row[i] || '';\n    });\n    return obj;\n  });\n  \n  results[sheetName] = parsed;\n}\n\nreturn [{ json: results }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
